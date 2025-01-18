@@ -1,40 +1,49 @@
-import { Injectable } from '@nestjs/common';
-import { Board, BoardStatus } from './board.model';
-import { randomUUID } from 'crypto';
-import { CreateBoardDto } from './dto/create-board.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Board } from './board.entity';
 
 @Injectable()
 export class BoardsService {
-  private boards: Board[] = [];
+  constructor(
+    @InjectRepository(Board)
+    private boardRepository: Repository<Board>,
+  ) {}
 
-  getAllBoards(): Board[] {
-    return this.boards;
+  async getBoardById(id: number): Promise<Board> {
+    const found = await this.boardRepository.findOne({ where: { id } });
+
+    if (!found) {
+      throw new NotFoundException(`Can't find Board with id ${id}`);
+    }
+
+    return found;
   }
 
-  createBoard(createBoardDto: CreateBoardDto) {
-    const { title, description } = createBoardDto;
-    const board: Board = {
-      id: randomUUID(),
-      title,
-      description,
-      status: BoardStatus.PUBLIC,
-    };
+  //   getAllBoards(): Board[] {
+  //     return this.boards;
+  //   }
 
-    this.boards.push(board);
-    return board;
-  }
+  //   createBoard(createBoardDto: CreateBoardDto) {
+  //     const { title, description } = createBoardDto;
+  //     const board: Board = {
+  //       id: randomUUID(),
+  //       title,
+  //       description,
+  //       status: BoardStatus.PUBLIC,
+  //     };
 
-  getBoardById(id: string) {
-    return this.boards.find((board) => board.id === id);
-  }
+  //     this.boards.push(board);
+  //     return board;
+  //   }
 
-  deleteBoard(id: string): void {
-    this.boards = this.boards.filter((board) => board.id !== id);
-  }
+  //   deleteBoard(id: string): void {
+  //     this.boards = this.boards.filter((board) => board.id !== id);
+  //   }
 
-  updateBoardStatus(id: string, status: BoardStatus): Board {
-    const board = this.getBoardById(id);
-    board.status = status;
-    return board;
-  }
+  //   updateBoardStatus(id: string, status: BoardStatus): Board {
+  //     const board = this.getBoardById(id);
+  //     board.status = status;
+  //     return board;
+  //   }
 }
