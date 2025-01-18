@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -12,6 +13,7 @@ import {
 import { BoardsService } from './boards.service';
 import { Board, BoardStatus } from './board.model';
 import { CreateBoardDto } from './dto/create-board.dto';
+import { BoardStatusValidationPipe } from './pipes/board-status-validation.pipe';
 
 @Controller('boards')
 export class BoardsController {
@@ -30,18 +32,30 @@ export class BoardsController {
 
   @Get('/:id')
   getBoardById(@Param('id') id: string): Board {
-    return this.boardsService.getBoardById(id);
+    const found = this.boardsService.getBoardById(id);
+
+    if (!found) {
+      throw new NotFoundException(`Can't find Board with id ${id}`);
+    }
+
+    return found;
   }
 
   @Delete('/:id')
   deleteBoardById(@Param('id') id: string): void {
+    const found = this.getBoardById(id);
+
+    if (!found) {
+      throw new NotFoundException(`Can't find Board with id ${id}`);
+    }
+
     return this.boardsService.deleteBoard(id);
   }
 
   @Patch('/:id/status')
   updateBoardStatus(
     @Param('id') id: string,
-    @Body('status') status: BoardStatus,
+    @Body('status', BoardStatusValidationPipe) status: BoardStatus,
   ): Board {
     return this.boardsService.updateBoardStatus(id, status);
   }
