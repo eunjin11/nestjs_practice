@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Board } from './board.entity';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { BoardStatus } from './board-status.enum';
+import { User } from 'src/auth/user.entity';
 
 @Injectable()
 export class BoardsService {
@@ -16,6 +17,13 @@ export class BoardsService {
     return await this.boardRepository.find();
   }
 
+  async getAllBoardsByUser(user: User): Promise<Board[]> {
+    const query = this.boardRepository.createQueryBuilder('board');
+    query.where('board.userId = :userId', { userId: user.id });
+    const boards = await query.getMany();
+    return boards;
+  }
+
   async getBoardById(id: number): Promise<Board> {
     const found = await this.boardRepository.findOne({ where: { id } });
 
@@ -26,12 +34,16 @@ export class BoardsService {
     return found;
   }
 
-  async createBoard(createBoardDto: CreateBoardDto): Promise<Board> {
+  async createBoard(
+    createBoardDto: CreateBoardDto,
+    user: User,
+  ): Promise<Board> {
     const { title, description } = createBoardDto;
     const board: Board = this.boardRepository.create({
       title,
       description,
       status: BoardStatus.PUBLIC,
+      user,
     });
 
     await this.boardRepository.save(board);
